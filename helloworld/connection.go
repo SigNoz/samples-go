@@ -1,0 +1,43 @@
+package helloworld
+
+import (
+	"context"
+	"crypto/tls"
+	"fmt"
+
+	"github.com/rs/zerolog/log"
+	"github.com/temporalio/samples-go/helloworld/instrument"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/interceptor"
+)
+
+func NewClient(ctx context.Context, tracingInterceptor interceptor.ClientInterceptor, metricsHandler client.MetricsHandler, logger *instrument.ZerologAdapter) (client.Client, error) {
+	// Get the key and cert from your env or local machine
+	clientKeyPath := "/Users/ankitnayan/Desktop/temporal-certs/temporal-ca.key"
+	clientCertPath := "/Users/ankitnayan/Desktop/temporal-certs/temporal-ca.pem"
+
+	// Specify the host and port of your Temporal Cloud Namespace
+	// Host and port format: namespace.unique_id.tmprl.cloud:port
+	hostPort := "integration.sdr7x.tmprl.cloud:7233"
+	namespace := "integration.sdr7x"
+	// Use the crypto/tls package to create a cert object
+	cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+	if err != nil {
+		log.Fatal().Msg(fmt.Sprintf("Unable to load cert and key pair. %v", err))
+	}
+	// Add the cert to the tls certificates in the ConnectionOptions of the Client
+	temporalClient, err := client.Dial(client.Options{
+		HostPort:  hostPort,
+		Namespace: namespace,
+		ConnectionOptions: client.ConnectionOptions{
+			TLS: &tls.Config{Certificates: []tls.Certificate{cert}},
+		},
+		Interceptors:   []interceptor.ClientInterceptor{tracingInterceptor},
+		MetricsHandler: metricsHandler,
+		Logger:         logger,
+	})
+	if err != nil {
+		log.Fatal().Msg(fmt.Sprintf("Unable to connect to Temporal Cloud. %v", err))
+	}
+	return temporalClient, nil
+}
