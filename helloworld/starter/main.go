@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"go.temporal.io/sdk/client"
 
@@ -26,18 +27,6 @@ func main() {
 	// Set up signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Start a goroutine to handle shutdown
-	go func() {
-		<-sigChan
-		if err := tp.Shutdown(ctx); err != nil {
-			log.Error().Msg(fmt.Sprintf("Error shutting down trace provider: %v", err.Error()))
-		}
-		if err := mp.Shutdown(ctx); err != nil {
-			log.Error().Msg(fmt.Sprintf("Error shutting down meter provider: %v", err.Error()))
-		}
-		os.Exit(0)
-	}()
 
 	tracingInterceptor, err := instrument.NewTracingInterceptor(instrument.TracerOptions{})
 	if err != nil {
@@ -70,5 +59,17 @@ func main() {
 		log.Fatal().Msg(fmt.Sprintf("Unable to get workflow result: %v", err.Error()))
 	}
 	log.Info().Msg(fmt.Sprintf("Workflow result: %v", result))
+
+	// Create a context with timeout for graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Shutdown telemetry providers gracefully
+	if err := tp.Shutdown(shutdownCtx); err != nil {
+		log.Error().Msg(fmt.Sprintf("Error shutting down trace provider: %v", err.Error()))
+	}
+	if err := mp.Shutdown(shutdownCtx); err != nil {
+		log.Error().Msg(fmt.Sprintf("Error shutting down meter provider: %v", err.Error()))
+	}
 
 }

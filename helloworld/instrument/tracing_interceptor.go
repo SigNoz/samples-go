@@ -426,9 +426,13 @@ func (t *tracingClientOutboundInterceptor) ExecuteWorkflow(
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "StartWorkflow",
 		Name:      in.WorkflowType,
-		Tags:      map[string]string{workflowIDTagKey: in.Options.ID},
-		ToHeader:  true,
-		Time:      time.Now(),
+		Tags: map[string]string{
+			workflowIDTagKey:   in.Options.ID,
+			workflowTypeTagKey: in.WorkflowType,
+			taskQueueTagKey:    in.Options.TaskQueue,
+		},
+		ToHeader: true,
+		Time:     time.Now(),
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
 	if err != nil {
 		return nil, err
@@ -450,9 +454,12 @@ func (t *tracingClientOutboundInterceptor) SignalWorkflow(ctx context.Context, i
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "SignalWorkflow",
 		Name:      in.SignalName,
-		Tags:      map[string]string{workflowIDTagKey: in.WorkflowID},
-		ToHeader:  true,
-		Time:      time.Now(),
+		Tags: map[string]string{
+			workflowIDTagKey: in.WorkflowID,
+			runIDTagKey:      in.RunID,
+		},
+		ToHeader: true,
+		Time:     time.Now(),
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
 	if err != nil {
 		return err
@@ -473,7 +480,7 @@ func (t *tracingClientOutboundInterceptor) SignalWithStartWorkflow(
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "SignalWithStartWorkflow",
 		Name:      in.WorkflowType,
-		Tags:      map[string]string{workflowIDTagKey: in.Options.ID},
+		Tags:      map[string]string{workflowIDTagKey: in.Options.ID, taskQueueTagKey: in.Options.TaskQueue, workflowTypeTagKey: in.WorkflowType},
 		ToHeader:  true,
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
 	if err != nil {
@@ -499,7 +506,7 @@ func (t *tracingClientOutboundInterceptor) QueryWorkflow(
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "QueryWorkflow",
 		Name:      in.QueryType,
-		Tags:      map[string]string{workflowIDTagKey: in.WorkflowID},
+		Tags:      map[string]string{workflowIDTagKey: in.WorkflowID, runIDTagKey: in.RunID},
 		ToHeader:  true,
 		Time:      time.Now(),
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
@@ -526,7 +533,7 @@ func (t *tracingClientOutboundInterceptor) UpdateWorkflow(
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "UpdateWorkflow",
 		Name:      in.UpdateName,
-		Tags:      map[string]string{workflowIDTagKey: in.WorkflowID},
+		Tags:      map[string]string{workflowIDTagKey: in.WorkflowID, runIDTagKey: in.RunID},
 		ToHeader:  true,
 		Time:      time.Now(),
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
@@ -553,7 +560,7 @@ func (t *tracingClientOutboundInterceptor) UpdateWithStartWorkflow(
 	span, ctx, err := t.root.startSpanFromContext(ctx, &TracerStartSpanOptions{
 		Operation: "UpdateWithStartWorkflow",
 		Name:      in.UpdateOptions.UpdateName,
-		Tags:      map[string]string{workflowIDTagKey: in.UpdateOptions.WorkflowID, updateIDTagKey: in.UpdateOptions.UpdateID},
+		Tags:      map[string]string{workflowIDTagKey: in.UpdateOptions.WorkflowID, updateIDTagKey: in.UpdateOptions.UpdateID, runIDTagKey: in.UpdateOptions.RunID},
 		ToHeader:  true,
 		Time:      time.Now(),
 	}, t.root.headerReader(ctx), t.root.headerWriter(ctx))
@@ -690,8 +697,11 @@ func (t *tracingWorkflowInboundInterceptor) HandleSignal(ctx workflow.Context, i
 		Operation: "HandleSignal",
 		Name:      in.SignalName,
 		Tags: map[string]string{
-			workflowIDTagKey: info.WorkflowExecution.ID,
-			runIDTagKey:      info.WorkflowExecution.RunID,
+			workflowIDTagKey:   info.WorkflowExecution.ID,
+			runIDTagKey:        info.WorkflowExecution.RunID,
+			workflowTypeTagKey: info.WorkflowType.Name,
+			namespaceTagKey:    info.Namespace,
+			taskQueueTagKey:    info.TaskQueueName,
 		},
 		FromHeader:     true,
 		Time:           time.Now(),
@@ -722,8 +732,11 @@ func (t *tracingWorkflowInboundInterceptor) HandleQuery(
 		Operation: "HandleQuery",
 		Name:      in.QueryType,
 		Tags: map[string]string{
-			workflowIDTagKey: info.WorkflowExecution.ID,
-			runIDTagKey:      info.WorkflowExecution.RunID,
+			workflowIDTagKey:   info.WorkflowExecution.ID,
+			runIDTagKey:        info.WorkflowExecution.RunID,
+			workflowTypeTagKey: info.WorkflowType.Name,
+			namespaceTagKey:    info.Namespace,
+			taskQueueTagKey:    info.TaskQueueName,
 		},
 		FromHeader: true,
 		Time:       time.Now(),
@@ -758,9 +771,12 @@ func (t *tracingWorkflowInboundInterceptor) ValidateUpdate(
 		Operation: "ValidateUpdate",
 		Name:      in.Name,
 		Tags: map[string]string{
-			workflowIDTagKey: info.WorkflowExecution.ID,
-			runIDTagKey:      info.WorkflowExecution.RunID,
-			updateIDTagKey:   currentUpdateInfo.ID,
+			workflowIDTagKey:   info.WorkflowExecution.ID,
+			runIDTagKey:        info.WorkflowExecution.RunID,
+			updateIDTagKey:     currentUpdateInfo.ID,
+			workflowTypeTagKey: info.WorkflowType.Name,
+			namespaceTagKey:    info.Namespace,
+			taskQueueTagKey:    info.TaskQueueName,
 		},
 		FromHeader: true,
 		Time:       time.Now(),
@@ -980,6 +996,7 @@ func (t *tracingWorkflowOutboundInterceptor) startNonReplaySpan(
 			runIDTagKey:        info.WorkflowExecution.RunID,
 			namespaceTagKey:    info.ParentWorkflowNamespace,
 			workflowTypeTagKey: info.WorkflowType.Name,
+			taskQueueTagKey:    info.TaskQueueName,
 		},
 		ToHeader: true,
 		Time:     time.Now(),

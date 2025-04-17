@@ -44,7 +44,7 @@ func main() {
 	metricsHandler := instrument.NewOpenTelemetryMetricsHandler()
 
 	// The client is a heavyweight object that should be created once per process.
-	c, err := helloworld.NewClient(ctx, tracingInterceptor, metricsHandler, logger)
+	c, err := helloworld.NewWorkerClient(ctx, tracingInterceptor, metricsHandler, logger)
 	if err != nil {
 		logger.Error("Unable to create client", "error", err)
 		return
