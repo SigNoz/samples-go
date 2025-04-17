@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/contrib/opentelemetry"
 
 	"github.com/rs/zerolog/log"
 	"github.com/temporalio/samples-go/helloworld"
@@ -40,7 +39,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	tracingInterceptor, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{})
+	tracingInterceptor, err := instrument.NewTracingInterceptor(instrument.TracerOptions{})
 	if err != nil {
 		log.Fatal().Msg(fmt.Sprintf("Unable to create interceptor: %v", err.Error()))
 	}
