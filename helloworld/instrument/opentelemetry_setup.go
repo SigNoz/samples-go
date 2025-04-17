@@ -12,9 +12,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
 func InitializeGlobalTelemetryProvider(ctx context.Context) (*sdktrace.TracerProvider, *sdkmetric.MeterProvider, error) {
@@ -25,16 +23,9 @@ func InitializeGlobalTelemetryProvider(ctx context.Context) (*sdktrace.TracerPro
 		log.Fatal().Msg(fmt.Sprintf("failed to initialize exporter: %v", err.Error()))
 	}
 
-	resource := resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceName("temporal-example"),
-		semconv.ServiceVersion("0.0.1"),
-	)
-
 	// Initialize Tracer Provider
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp),
-		sdktrace.WithResource(resource),
 	)
 	otel.SetTracerProvider(tp)
 
@@ -59,7 +50,6 @@ func InitializeGlobalTelemetryProvider(ctx context.Context) (*sdktrace.TracerPro
 
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter)),
-		sdkmetric.WithResource(resource),
 	)
 	otel.SetMeterProvider(mp)
 

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 
-	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 
 	"github.com/temporalio/samples-go/helloworld"
@@ -44,7 +43,7 @@ func main() {
 	metricsHandler := instrument.NewOpenTelemetryMetricsHandler()
 
 	// The client is a heavyweight object that should be created once per process.
-	c, err := helloworld.NewWorkerClient(ctx, tracingInterceptor, metricsHandler, logger)
+	c, err := helloworld.NewClient(ctx, tracingInterceptor, metricsHandler, logger)
 	if err != nil {
 		logger.Error("Unable to create client", "error", err)
 		return
@@ -53,7 +52,7 @@ func main() {
 
 	// Create a new worker with the interceptor
 	w := worker.New(c, "hello-world", worker.Options{
-		Interceptors: []interceptor.WorkerInterceptor{tracingInterceptor.(interceptor.WorkerInterceptor)},
+		// Interceptors: []interceptor.WorkerInterceptor{tracingInterceptor.(interceptor.WorkerInterceptor)},
 	})
 
 	w.RegisterWorkflow(helloworld.Workflow)
