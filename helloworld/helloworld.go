@@ -54,6 +54,6 @@ func Activity(ctx context.Context, name string) (string, error) {
 		return "", err
 	}
 
-	logger.Info("Received response from Signoz", "body", string(body))
+	logger.Info("Received response from Signoz", "bytes", len(body))
 	return "Hello " + name + "!", nil
 }
