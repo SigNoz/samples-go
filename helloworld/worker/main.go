@@ -33,7 +33,12 @@ func main() {
 		}
 	}()
 
-	tracingInterceptor, err := instrument.NewTracingInterceptor(instrument.TracerOptions{})
+	// Create interceptor
+	tracingInterceptor, err := instrument.NewTracingInterceptor(instrument.TracerOptions{
+		DisableSignalTracing: false,
+		DisableQueryTracing:  false,
+		DisableBaggage:       false,
+	})
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Unable to create interceptor: %v", err.Error()))
 	}
@@ -48,9 +53,9 @@ func main() {
 	}
 	defer c.Close()
 
+	// Create a new worker with the interceptor
 	w := worker.New(c, "hello-world", worker.Options{
-		// Create interceptor that will put started time on the logger
-		Interceptors: []interceptor.WorkerInterceptor{tracingInterceptor},
+		Interceptors: []interceptor.WorkerInterceptor{tracingInterceptor.(interceptor.WorkerInterceptor)},
 	})
 
 	w.RegisterWorkflow(helloworld.Workflow)

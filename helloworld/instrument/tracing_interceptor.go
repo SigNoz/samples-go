@@ -348,17 +348,17 @@ func NewTracingInterceptor(options TracerOptions) (interceptor.Interceptor, erro
 	if err != nil {
 		return nil, err
 	}
-	return interceptor.NewTracingInterceptor(t), nil
-}
 
-func (t *tracer) Options() TracerOptions {
-	return TracerOptions{
-		SpanContextKey:          t.options.SpanContextKey,
-		HeaderKey:               t.options.HeaderKey,
-		DisableSignalTracing:    t.options.DisableSignalTracing,
-		DisableQueryTracing:     t.options.DisableQueryTracing,
-		AllowInvalidParentSpans: t.options.AllowInvalidParentSpans,
+	// Initialize SpanContextKey if not set
+	if options.SpanContextKey == nil {
+		options.SpanContextKey = struct{}{}
 	}
+
+	// Create our own interceptor implementation
+	return &tracingInterceptor{
+		tracer:  t,
+		options: options,
+	}, nil
 }
 
 func (t *tracingInterceptor) InterceptClient(next interceptor.ClientOutboundInterceptor) interceptor.ClientOutboundInterceptor {
@@ -653,6 +653,7 @@ func (t *tracingWorkflowInboundInterceptor) ExecuteWorkflow(
 	in *interceptor.ExecuteWorkflowInput,
 ) (interface{}, error) {
 	// Start span reading from header
+	fmt.Println("********* tracingWorkflowInboundInterceptor.ExecuteWorkflow called *********")
 	span, ctx, err := t.root.startSpanFromWorkflowContext(ctx, &TracerStartSpanOptions{
 		Operation: "RunWorkflow",
 		Name:      t.info.WorkflowType.Name,
@@ -865,9 +866,9 @@ func (t *tracingWorkflowOutboundInterceptor) ExecuteChildWorkflow(
 	args ...interface{},
 ) workflow.ChildWorkflowFuture {
 	// Start span writing to header
-	span, ctx, errFut := t.startNonReplaySpan(ctx, "StartChildWorkflow", childWorkflowType, false, t.root.workflowHeaderWriter(ctx))
-	if errFut != nil {
-		return childWorkflowFuture{errFut}
+	span, ctx, futErr := t.startNonReplaySpan(ctx, "StartChildWorkflow", childWorkflowType, false, t.root.workflowHeaderWriter(ctx))
+	if futErr != nil {
+		return childWorkflowFuture{futErr}
 	}
 	defer span.Finish(&TracerFinishSpanOptions{})
 
@@ -1233,4 +1234,8 @@ func (t textMapCarrier) Keys() []string {
 		ret = append(ret, k)
 	}
 	return ret
+}
+
+func (t *tracer) Options() TracerOptions {
+	return *t.options
 }

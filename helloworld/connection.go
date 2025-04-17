@@ -32,7 +32,7 @@ func NewClient(ctx context.Context, tracingInterceptor interceptor.ClientInterce
 		ConnectionOptions: client.ConnectionOptions{
 			TLS: &tls.Config{Certificates: []tls.Certificate{cert}},
 		},
-		Interceptors:   []interceptor.ClientInterceptor{tracingInterceptor},
+		// Interceptors:   []interceptor.ClientInterceptor{tracingInterceptor},
 		MetricsHandler: metricsHandler,
 		Logger:         logger,
 	})
