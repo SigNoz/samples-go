@@ -653,7 +653,7 @@ func (t *tracingWorkflowInboundInterceptor) ExecuteWorkflow(
 	in *interceptor.ExecuteWorkflowInput,
 ) (interface{}, error) {
 	// Start span reading from header
-	fmt.Println("********* tracingWorkflowInboundInterceptor.ExecuteWorkflow called *********")
+
 	span, ctx, err := t.root.startSpanFromWorkflowContext(ctx, &TracerStartSpanOptions{
 		Operation: "RunWorkflow",
 		Name:      t.info.WorkflowType.Name,
@@ -976,8 +976,10 @@ func (t *tracingWorkflowOutboundInterceptor) startNonReplaySpan(
 		Name:       name,
 		DependedOn: dependedOn,
 		Tags: map[string]string{
-			workflowIDTagKey: info.WorkflowExecution.ID,
-			runIDTagKey:      info.WorkflowExecution.RunID,
+			workflowIDTagKey:   info.WorkflowExecution.ID,
+			runIDTagKey:        info.WorkflowExecution.RunID,
+			namespaceTagKey:    info.ParentWorkflowNamespace,
+			workflowTypeTagKey: info.WorkflowType.Name,
 		},
 		ToHeader: true,
 		Time:     time.Now(),

@@ -11,9 +11,19 @@ type ZerologAdapter struct {
 	logger zerolog.Logger
 }
 
-// NewZerologAdapter creates a new instance of ZerologAdapter.
+// NewZerologAdapter creates a new instance of ZerologAdapter with proper configuration.
 func NewZerologAdapter() *ZerologAdapter {
-	zerologLogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	// Configure zerolog
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	// Create logger with proper configuration
+	zerologLogger := zerolog.New(os.Stdout).
+		With().
+		Timestamp().
+		Caller().
+		Logger()
+
 	return &ZerologAdapter{logger: zerologLogger}
 }
 

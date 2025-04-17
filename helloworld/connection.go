@@ -3,9 +3,7 @@ package helloworld
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 
-	"github.com/rs/zerolog/log"
 	"github.com/temporalio/samples-go/helloworld/instrument"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/interceptor"
@@ -20,11 +18,14 @@ func NewClient(ctx context.Context, tracingInterceptor interceptor.ClientInterce
 	// Host and port format: namespace.unique_id.tmprl.cloud:port
 	hostPort := "integration.sdr7x.tmprl.cloud:7233"
 	namespace := "integration.sdr7x"
+
 	// Use the crypto/tls package to create a cert object
 	cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 	if err != nil {
-		log.Fatal().Msg(fmt.Sprintf("Unable to load cert and key pair. %v", err))
+		logger.Error("Unable to load cert and key pair", "error", err)
+		return nil, err
 	}
+
 	// Add the cert to the tls certificates in the ConnectionOptions of the Client
 	temporalClient, err := client.Dial(client.Options{
 		HostPort:  hostPort,
@@ -37,7 +38,12 @@ func NewClient(ctx context.Context, tracingInterceptor interceptor.ClientInterce
 		Logger:         logger,
 	})
 	if err != nil {
-		log.Fatal().Msg(fmt.Sprintf("Unable to connect to Temporal Cloud. %v", err))
+		logger.Error("Unable to connect to Temporal Cloud", "error", err)
+		return nil, err
 	}
+
+	logger.Info("Successfully connected to Temporal Cloud",
+		"namespace", namespace,
+		"hostPort", hostPort)
 	return temporalClient, nil
 }

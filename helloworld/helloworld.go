@@ -2,7 +2,6 @@ package helloworld
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -36,18 +35,25 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 func Activity(ctx context.Context, name string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activity started", "name", name)
-	url := "https://absolute-grubworm.in.signoz.cloud/api/v1/version"
 
+	url := "https://signoz.io"
 	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
-	fmt.Printf("Sending request...\n")
+	logger.Info("Sending request to Signoz", "url", url)
 	res, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		logger.Error("Failed to send request", "error", err)
+		return "", err
 	}
+
 	body, err := io.ReadAll(res.Body)
 	_ = res.Body.Close()
-	logger.Info("Response", "body", string(body))
+	if err != nil {
+		logger.Error("Failed to read response body", "error", err)
+		return "", err
+	}
+
+	logger.Info("Received response from Signoz", "body", string(body))
 	return "Hello " + name + "!", nil
 }

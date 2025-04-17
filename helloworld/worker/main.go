@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/rs/zerolog/log"
 
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
@@ -21,15 +18,15 @@ func main() {
 
 	tp, mp, err := instrument.InitializeGlobalTelemetryProvider(ctx)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Unable to create a global trace provider: %v", err.Error()))
+		logger.Error("Unable to create a global trace provider", "error", err)
 	}
 
 	defer func() {
 		if err := tp.Shutdown(ctx); err != nil {
-			log.Error().Msg(fmt.Sprintf("Error shutting down trace provider: %v", err.Error()))
+			logger.Error("Error shutting down trace provider", "error", err)
 		}
 		if err := mp.Shutdown(ctx); err != nil {
-			log.Error().Msg(fmt.Sprintf("Error shutting down meter provider: %v", err.Error()))
+			logger.Error("Error shutting down meter provider", "error", err)
 		}
 	}()
 
@@ -40,7 +37,7 @@ func main() {
 		DisableBaggage:       false,
 	})
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Unable to create interceptor: %v", err.Error()))
+		logger.Error("Unable to create interceptor", "error", err)
 	}
 
 	// Create metrics handler
@@ -49,7 +46,8 @@ func main() {
 	// The client is a heavyweight object that should be created once per process.
 	c, err := helloworld.NewClient(ctx, tracingInterceptor, metricsHandler, logger)
 	if err != nil {
-		log.Fatal().Msg(fmt.Sprintf("Unable to create client: %v", err.Error()))
+		logger.Error("Unable to create client", "error", err)
+		return
 	}
 	defer c.Close()
 
@@ -64,6 +62,7 @@ func main() {
 	// Start listening to the Task Queue.
 	err = w.Run(worker.InterruptCh())
 	if err != nil {
-		log.Fatal().Msg(fmt.Sprintf("Unable to start worker: %v", err.Error()))
+		logger.Error("Unable to start worker", "error", err)
+		return
 	}
 }
