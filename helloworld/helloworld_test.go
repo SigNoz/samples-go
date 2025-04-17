@@ -17,7 +17,7 @@ func Test_Workflow(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 
 	// Mock activity implementation
-	env.OnActivity(Activity, mock.Anything, "Temporal").Return("Hello Temporal!", nil)
+	env.OnActivity(Activity1, mock.Anything, "Temporal").Return("Hello Temporal!", nil)
 
 	env.ExecuteWorkflow(Workflow, "Temporal")
 
@@ -31,9 +31,9 @@ func Test_Workflow(t *testing.T) {
 func Test_Activity(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestActivityEnvironment()
-	env.RegisterActivity(Activity)
+	env.RegisterActivity(Activity1)
 
-	val, err := env.ExecuteActivity(Activity, "World")
+	val, err := env.ExecuteActivity(Activity1, "World")
 	require.NoError(t, err)
 
 	var res string
@@ -75,7 +75,7 @@ func Test_Using_DevServer(t *testing.T) {
 
 	// register activity and workflow
 	w.RegisterWorkflow(Workflow)
-	w.RegisterActivity(Activity)
+	w.RegisterActivity(Activity1)
 
 	// run the workflow application (equivalent to starter/main.go)
 	workflowOptions := client.StartWorkflowOptions{

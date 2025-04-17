@@ -56,7 +56,9 @@ func main() {
 	})
 
 	w.RegisterWorkflow(helloworld.Workflow)
-	w.RegisterActivity(helloworld.Activity)
+	w.RegisterActivity(helloworld.Activity1)
+	w.RegisterActivity(helloworld.Activity2)
+	w.RegisterActivity(helloworld.Activity3)
 
 	// Start listening to the Task Queue.
 	err = w.Run(worker.InterruptCh())

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
 
 	"github.com/rs/zerolog/log"
@@ -42,11 +43,13 @@ func main() {
 	}
 	defer c.Close()
 
+	workflowID := fmt.Sprintf("hello_world_%s", uuid.New().String())
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        "hello_world_workflowID",
+		ID:        workflowID,
 		TaskQueue: "hello-world",
 	}
 
+	logger.Info("Starting workflow", "workflowID", workflowID)
 	we, err := c.ExecuteWorkflow(ctx, workflowOptions, helloworld.Workflow, "Workflow Name 2")
 	if err != nil {
 		log.Fatal().Msg(fmt.Sprintf("Unable to execute workflow: %v", err.Error()))
@@ -61,7 +64,7 @@ func main() {
 	log.Info().Msg(fmt.Sprintf("Workflow result: %v", result))
 
 	// Create a context with timeout for graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Shutdown telemetry providers gracefully
@@ -71,5 +74,4 @@ func main() {
 	if err := mp.Shutdown(shutdownCtx); err != nil {
 		log.Error().Msg(fmt.Sprintf("Error shutting down meter provider: %v", err.Error()))
 	}
-
 }

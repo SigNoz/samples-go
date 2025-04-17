@@ -21,18 +21,47 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("HelloWorld workflow started", "name", name)
 
-	var result string
-	err := workflow.ExecuteActivity(ctx, Activity, "Activity").Get(ctx, &result)
+	var result1 string
+	err := workflow.ExecuteActivity(ctx, Activity1, "Activity").Get(ctx, &result1)
 	if err != nil {
 		logger.Error("Activity failed", "error", err)
 		return "", err
 	}
 
-	logger.Info("Workflow completed", "result", result)
-	return result, nil
+	// Random sleep between 1-3 seconds
+	sleepDuration := time.Second * time.Duration(1+workflow.Now(ctx).UnixNano()%3)
+	logger.Info("Sleeping before Activity2", "duration", sleepDuration.String())
+	workflow.Sleep(ctx, sleepDuration)
+
+	var result2 string
+	err = workflow.ExecuteActivity(ctx, Activity2, "Activity2").Get(ctx, &result2)
+	if err != nil {
+		logger.Error("Activity2 failed", "error", err)
+		return "", err
+	}
+
+	finalResult := result1 + " " + result2
+
+	// Use workflow start time for deterministic randomization
+	randomValue := workflow.GetInfo(ctx).WorkflowStartTime.UnixNano() % 2
+	if randomValue == 0 { // 50% chance
+		logger.Info("Executing Activity3")
+		var result3 string
+		err = workflow.ExecuteActivity(ctx, Activity3, "Activity3").Get(ctx, &result3)
+		if err != nil {
+			logger.Error("Activity3 failed", "error", err)
+			return "", err
+		}
+		finalResult += " " + result3
+	} else {
+		logger.Info("Skipping Activity3")
+	}
+
+	logger.Info("Workflow completed", "result", finalResult)
+	return finalResult, nil
 }
 
-func Activity(ctx context.Context, name string) (string, error) {
+func Activity1(ctx context.Context, name string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activity started", "name", name)
 
@@ -56,4 +85,28 @@ func Activity(ctx context.Context, name string) (string, error) {
 
 	logger.Info("Received response from Signoz", "bytes", len(body))
 	return "Hello " + name + "!", nil
+}
+
+func Activity2(ctx context.Context, name string) (string, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Activity2 started", "name", name)
+
+	// Simulate some work
+	time.Sleep(500 * time.Millisecond)
+
+	result := "Welcome back " + name + "!"
+	logger.Info("Activity2 completed", "result", result)
+	return result, nil
+}
+
+func Activity3(ctx context.Context, name string) (string, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Activity3 started", "name", name)
+
+	// Simulate different work
+	time.Sleep(750 * time.Millisecond)
+
+	result := "See you soon " + name + "!"
+	logger.Info("Activity3 completed", "result", result)
+	return result, nil
 }
