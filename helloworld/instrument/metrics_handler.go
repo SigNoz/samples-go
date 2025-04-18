@@ -107,7 +107,8 @@ type OpenTelemetryTimer struct {
 
 // Record implements MetricsTimer.Record
 func (t *OpenTelemetryTimer) Record(value time.Duration) {
-	t.histogram.Record(context.Background(), value.Seconds(), metric.WithAttributes(convertTagsToAttributes(t.tags)...))
+	// fmt.Println("Recording timer", t.histogram.Description(), value.Milliseconds(), convertTagsToAttributes(t.tags))
+	t.histogram.Record(context.Background(), float64(value.Milliseconds()), metric.WithAttributes(convertTagsToAttributes(t.tags)...))
 }
 
 // convertTagsToAttributes converts Temporal tags to OpenTelemetry attributes

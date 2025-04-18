@@ -3,6 +3,7 @@ package instrument
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -34,7 +35,7 @@ func InitializeGlobalTelemetryProvider(ctx context.Context) (*sdktrace.TracerPro
 	}
 
 	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter)),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(10*time.Second))),
 	)
 	otel.SetMeterProvider(mp)
 
