@@ -26,10 +26,22 @@ func NewOpenTelemetryMetricsHandler() client.MetricsHandler {
 
 // WithTags implements MetricsHandler.WithTags
 func (h *OpenTelemetryMetricsHandler) WithTags(tags map[string]string) client.MetricsHandler {
-	// Create a new handler with the same meter but different tags
+	// Create a new handler with the same meter and merged tags
+	newTags := make(map[string]string, len(h.tags)+len(tags))
+
+	// First copy existing tags
+	for k, v := range h.tags {
+		newTags[k] = v
+	}
+
+	// Then add/override with new tags
+	for k, v := range tags {
+		newTags[k] = v
+	}
+
 	return &OpenTelemetryMetricsHandler{
 		meter: h.meter,
-		tags:  tags,
+		tags:  newTags,
 	}
 }
 
