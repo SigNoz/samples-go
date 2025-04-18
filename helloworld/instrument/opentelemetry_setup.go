@@ -3,11 +3,10 @@ package instrument
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -29,23 +28,9 @@ func InitializeGlobalTelemetryProvider(ctx context.Context) (*sdktrace.TracerPro
 	)
 	otel.SetTracerProvider(tp)
 
-	// Initialize Metric Provider
-	metricOptions := []otlpmetrichttp.Option{
-		otlpmetrichttp.WithEndpoint("ingest.in.signoz.cloud"),
-		otlpmetrichttp.WithURLPath("/v1/metrics"),
-		otlpmetrichttp.WithCompression(otlpmetrichttp.GzipCompression),
-		otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
-			Enabled:         true,
-			InitialInterval: 1 * time.Second,
-			MaxInterval:     60 * time.Second,
-			MaxElapsedTime:  120 * time.Second,
-		}),
-		otlpmetrichttp.WithTimeout(30 * time.Second),
-	}
-
-	metricExporter, err := otlpmetrichttp.New(ctx, metricOptions...)
+	metricExporter, err := otlpmetricgrpc.New(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create metric exporter: %w", err)
+		log.Fatal().Msg(fmt.Sprintf("failed to initialize exporter: %v", err.Error()))
 	}
 
 	mp := sdkmetric.NewMeterProvider(
